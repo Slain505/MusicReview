@@ -1,0 +1,30 @@
+# Go
+/bin/
+/dist/
+/out/
+*.exe
+*.test
+*.prof
+
+# Go build cache
+**/.cache/
+
+# Env / local config
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.DS_Store
+
+# Logs
+*.log
+
+# Docker volumes are not in repo, but keep local artifacts out
+storage/
+db_data/
+
+# OS
+.DS_Store

@@ -1,10 +1,8 @@
 package httpapi
 
 import (
-	"net/http"
-	"strconv"
-
 	"MusicReview/internal/sse"
+	"net/http"
 )
 
 type createCommentReq struct {
@@ -26,13 +24,19 @@ func (a *API) createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// (необязательно) проверить, что трек существует
-	if _, err := a.Store.GetTrack(r.Context(), trackID); err != nil {
+	track, err := a.Store.GetTrack(r.Context(), trackID)
+	if err != nil {
 		if isNotFound(err) {
 			http.Error(w, "track not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "failed to validate track", http.StatusInternalServerError)
+		http.Error(w, "failed to load track", http.StatusInternalServerError)
+		return
+	}
+
+	// If duration is known, validate that timestamp_ms is within the track length.
+	if track.DurationMS != nil && req.TimestampMS > *track.DurationMS {
+		http.Error(w, "timestamp_ms exceeds track duration", http.StatusBadRequest)
 		return
 	}
 
@@ -48,26 +52,4 @@ func (a *API) createComment(w http.ResponseWriter, r *http.Request) {
 	})
 
 	writeJSON(w, http.StatusCreated, c)
-}
-
-func (a *API) listComments(w http.ResponseWriter, r *http.Request) {
-	trackID, err := idParam(r)
-	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-
-	limit := 50
-	if q := r.URL.Query().Get("limit"); q != "" {
-		if n, err := strconv.Atoi(q); err == nil {
-			limit = n
-		}
-	}
-
-	items, err := a.Store.ListComments(r.Context(), trackID, limit)
-	if err != nil {
-		http.Error(w, "failed to list comments", http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, http.StatusOK, items)
 }

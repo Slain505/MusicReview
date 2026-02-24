@@ -25,16 +25,21 @@ func New(store *store.Store, hub *sse.Hub) *API {
 
 func (a *API) Router() http.Handler {
 	r := chi.NewRouter()
+	r.Use(cors)
 
 	r.Get("/healthz", a.healthz)
 
+	r.Get("/tracks", a.listTracks)
 	r.Post("/tracks", a.createTrack)
-	r.Get("/tracks/{id}", a.getTrack)
 
+	r.Get("/tracks/{id}", a.getTrack)
+	r.Get("/tracks/{id}/audio", a.getTrackAudio)
 	r.Post("/tracks/{id}/comments", a.createComment)
 	r.Get("/tracks/{id}/comments", a.listComments)
-
 	r.Get("/tracks/{id}/events", a.trackEvents)
+	r.Post("/tracks/{id}/share", a.createShare)
+
+	r.Get("/share/{token}", a.sharePage)
 
 	r.Get("/debug/sse", a.debugSSE)
 

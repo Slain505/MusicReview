@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from "react-router-dom";
 import TracksPage from "./pages/TracksPage";
 import TrackPage from "./pages/TrackPage";
+import SharePage from "./pages/SharePage";
 
 export default function App() {
     return (
@@ -15,6 +16,7 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<TracksPage />} />
                 <Route path="/tracks/:id" element={<TrackPage />} />
+                <Route path="/share/:token" element={<SharePage />} />
             </Routes>
         </div>
     );

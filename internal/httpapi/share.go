@@ -60,6 +60,35 @@ func newToken(nBytes int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
+func (a *API) getShareJSON(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	if token == "" {
+		http.Error(w, "invalid token", http.StatusBadRequest)
+		return
+	}
+
+	sl, err := a.Store.GetShareLink(r.Context(), token)
+	if err != nil {
+		if isNotFound(err) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "failed to get share link", http.StatusInternalServerError)
+		return
+	}
+
+	if sl.ExpiresAt != nil && time.Now().After(*sl.ExpiresAt) {
+		http.Error(w, "link expired", http.StatusGone)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"token":      sl.Token,
+		"track_id":   sl.TrackID,
+		"expires_at": sl.ExpiresAt,
+	})
+}
+
 func (a *API) sharePage(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
 	if token == "" {

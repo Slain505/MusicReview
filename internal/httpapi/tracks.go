@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"MusicReview/internal/audioanalyzer"
+	"MusicReview/internal/sse"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -117,11 +118,24 @@ func (a *API) createTrackMultipart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func(trackID int64, path string) {
-		res, err := audioanalyzer.Analyze(context.Background(), path, 1000)
+		ctx := context.Background()
+
+		res, err := audioanalyzer.Analyze(ctx, path, 1000)
 		if err != nil {
 			return
 		}
-		_ = a.Store.SetTrackAnalysis(context.Background(), trackID, res.DurationMS, res.Peaks)
+
+		if err := a.Store.SetTrackAnalysis(ctx, trackID, res.DurationMS, res.Peaks); err != nil {
+			return
+		}
+
+		// Notify clients that analysis is ready (clients can refetch track JSON).
+		a.Hub.Publish(trackID, sse.Event{
+			Type: "track.analyzed",
+			Data: map[string]any{
+				"track_id": trackID,
+			},
+		})
 	}(t.ID, dstPath)
 
 	// return reload track

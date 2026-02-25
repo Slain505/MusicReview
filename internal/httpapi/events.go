@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -35,6 +36,20 @@ func (a *API) trackEvents(w http.ResponseWriter, r *http.Request) {
 	// сразу отправим hello
 	_ = sse.WriteSSE(w, []byte(`{"type":"hello"}`))
 	flusher.Flush()
+
+	// If analysis is already ready, send an initial event to avoid race conditions.
+	if track, err := a.Store.GetTrack(r.Context(), trackID); err == nil {
+		if track.DurationMS != nil {
+			b, _ := json.Marshal(sse.Event{
+				Type: "track.analyzed",
+				Data: map[string]any{
+					"track_id": trackID,
+				},
+			})
+			_ = sse.WriteSSE(w, b)
+			flusher.Flush()
+		}
+	}
 
 	for {
 		select {

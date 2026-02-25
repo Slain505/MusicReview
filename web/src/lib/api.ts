@@ -60,3 +60,15 @@ export async function uploadTrack(title: string, file: File): Promise<Track> {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
 }
+
+export async function createShare(trackId: number): Promise<{ token: string; url: string }> {
+    const res = await fetch(`${API_BASE}/tracks/${trackId}/share`, { method: "POST" });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+
+export async function resolveShare(token: string): Promise<{ token: string; track_id: number; expires_at?: string | null }> {
+    const res = await fetch(`${API_BASE}/api/share/${token}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}

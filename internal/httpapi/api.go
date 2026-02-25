@@ -39,6 +39,8 @@ func (a *API) Router() http.Handler {
 	r.Get("/tracks/{id}/events", a.trackEvents)
 	r.Post("/tracks/{id}/share", a.createShare)
 
+	r.Get("/api/share/{token}", a.getShareJSON)
+
 	r.Get("/share/{token}", a.sharePage)
 
 	r.Get("/debug/sse", a.debugSSE)

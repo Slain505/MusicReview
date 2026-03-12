@@ -56,7 +56,7 @@ func (a *API) healthz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	w.Write([]byte("REAL TRAP SHIT"))
 }
 
 func idParam(r *http.Request) (int64, error) {

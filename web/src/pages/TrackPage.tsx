@@ -52,6 +52,18 @@ export default function TrackPage() {
         return () => es.close();
     }, [trackId]);
 
+    useEffect(() => {
+        const q = new URLSearchParams(window.location.search);
+        const t = q.get("t");
+        if (!t) return;
+
+        const ms = Number(t);
+        if (!Number.isFinite(ms) || ms < 0) return;
+
+        // wait a tick for audio element
+        setTimeout(() => jump(ms), 0);
+    }, [trackId]);
+
     async function onSend() {
         try {
             const t = audioRef.current?.currentTime ?? 0;

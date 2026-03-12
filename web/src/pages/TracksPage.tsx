@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { listTracks, uploadTrack } from "../lib/api";
+import { listTracks, uploadTrackWithProgress } from "../lib/api";
 import type { Track } from "../lib/api";
 
 export default function TracksPage() {
@@ -10,18 +10,26 @@ export default function TracksPage() {
     const [title, setTitle] = useState("New demo");
     const [file, setFile] = useState<File | null>(null);
     const [busy, setBusy] = useState(false);
+    const [progress, setProgress] = useState<number>(0);
 
     async function onUpload() {
         if (!file) {
             setErr("Choose an audio file first");
             return;
         }
+
         setBusy(true);
         setErr("");
+        setProgress(0);
+
         try {
-            const t = await uploadTrack(title, file);
+            const t = await uploadTrackWithProgress(title, file, setProgress);
+
+            // optional: refresh list
             const refreshed = await listTracks();
             setItems(refreshed);
+
+            // go to track page immediately; it will show "Analyzing…" until SSE track.analyzed arrives
             window.location.href = `/tracks/${t.id}`;
         } catch (e) {
             setErr(String(e));
@@ -61,6 +69,16 @@ export default function TracksPage() {
                 </div>
             </div>
             {err && <div style={{ color: "crimson" }}>{err}</div>}
+            {busy && (
+                <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>
+                        Uploading… {progress}%
+                    </div>
+                    <div style={{ height: 10, borderRadius: 999, background: "#eee", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${progress}%`, background: "#111" }} />
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: "grid", gap: 10 }}>
                 {items.map((t) => (

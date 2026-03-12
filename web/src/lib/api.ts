@@ -61,6 +61,42 @@ export async function uploadTrack(title: string, file: File): Promise<Track> {
     return res.json();
 }
 
+export function uploadTrackWithProgress(
+    title: string,
+    file: File,
+    onProgress: (percent: number) => void
+): Promise<Track> {
+    return new Promise((resolve, reject) => {
+        const form = new FormData();
+        form.append("title", title);
+        form.append("audio", file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}/tracks`);
+
+        xhr.upload.onprogress = (e) => {
+            if (!e.lengthComputable) return;
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(percent);
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    resolve(JSON.parse(xhr.responseText));
+                } catch (err) {
+                    reject(err);
+                }
+            } else {
+                reject(new Error(xhr.responseText || `Upload failed: ${xhr.status}`));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(form);
+    });
+}
+
 export async function createShare(trackId: number): Promise<{ token: string; url: string }> {
     const res = await fetch(`${API_BASE}/tracks/${trackId}/share`, { method: "POST" });
     if (!res.ok) throw new Error(await res.text());
